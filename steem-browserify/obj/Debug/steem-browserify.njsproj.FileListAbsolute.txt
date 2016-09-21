@@ -1,0 +1,1 @@
+C:\Repos\steem-browserify\steem-browserify\bin\Microsoft.NodejsTools.WebRole.dll

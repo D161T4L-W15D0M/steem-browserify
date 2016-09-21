@@ -1,0 +1,28 @@
+{
+    "name": "steem-browserify",
+    "version": "0.5.1",
+    "description": "cross-browser fork of https://github.com/adcpm/steem 0.3.21 and https://github.com/adcpm/steemauth 0.0.16",
+    "main": "app.js",
+    "scripts": {
+        "test": "node test.js",
+        "build": "browserify index.js -o steem.js && uglifyjs steem.js -o steem.min.js"
+    },
+    "browser": { "ws": false },
+    "author": { "name": "D161T4L W15D0M" },
+    "license": "MIT",
+    "dependencies": {
+        "bigi": "^1.4.2",
+        "bs58": "^3.0.0",
+        "bytebuffer": "^5.0.1",
+        "crypto-browserify": "^3.11.0",
+        "detect-node": "^2.0.3",
+        "ecurve": "^1.0.3",
+        "ws": "^1.1.1"
+    },
+    "devDependencies": {
+        "browserify": "^13.0.1",
+        "bufferutil": "^1.2.1",
+        "uglifyjs": "^2.4.10",
+        "utf-8-validate": "^1.2.1"
+    }
+}
