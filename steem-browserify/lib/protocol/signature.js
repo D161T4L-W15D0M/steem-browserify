@@ -59,7 +59,11 @@ var Signature = function () {
     */
     Signature.signBuffer = function signBuffer(buf, private_key) {
         var _hash = hash.sha256(buf);
-        return Signature.signBufferSha256(_hash, private_key);
+        try {
+            return Signature.signBufferSha256(_hash, private_key);
+        } catch (e) {
+            throw new Error(e.toString().substring(7));
+        }
     };
 
     /** Sign a buffer of exactally 32 bytes in size (sha256(text))
@@ -71,8 +75,12 @@ var Signature = function () {
 
     Signature.signBufferSha256 = function signBufferSha256(buf_sha256, private_key) {
         if (buf_sha256.length !== 32 || !Buffer.isBuffer(buf_sha256)) throw new Error("buf_sha256: 32 byte buffer requred");
-        private_key = toPrivateObj(private_key);
-        assert(private_key, 'private_key required');
+        try {
+            private_key = toPrivateObj(private_key);
+        } catch (e) {
+            throw new Error("Bad or missing key");
+        }
+        // assert(private_key, 'private_key required');
 
         var der, e, ecsignature, i, lenR, lenS, nonce;
         i = null;
@@ -93,7 +101,11 @@ var Signature = function () {
                 console.log("WARN: " + nonce + " attempts to find canonical signature");
             }
         }
-        return new Signature(ecsignature.r, ecsignature.s, i);
+        try {
+            return new Signature(ecsignature.r, ecsignature.s, i);
+        } catch (e) {
+            throw new Error(e.toString().substring(7));
+        }
     };
 
     Signature.sign = function sign(string, private_key) {
@@ -150,6 +162,10 @@ var Signature = function () {
 }();
 
 var toPrivateObj = function toPrivateObj(o) {
-    return o ? o.d ? o : PrivateKey.fromWif(o) : o /*null or undefined*/;
+    try {
+        return o ? o.d ? o : PrivateKey.fromWif(o) : o /*null or undefined*/;
+    } catch (e) {
+        throw new Error(e.toString().substring(7));
+    }
 };
 module.exports = Signature;

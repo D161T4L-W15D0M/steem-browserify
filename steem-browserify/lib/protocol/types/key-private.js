@@ -57,7 +57,9 @@ var PrivateKey = function () {
     PrivateKey.fromWif = function fromWif(_private_wif) {
         var private_wif = new Buffer(base58.decode(_private_wif));
         var version = private_wif.readUInt8(0);
-        assert.equal(0x80, version, "Expected version " + 0x80 + ", instead got " + version);
+        if (0x80 != version)
+            throw new Error("Expected version " + 0x80 + ", instead got " + version);
+        // assert.equal(0x80, version, "Expected version " + 0x80 + ", instead got " + version);
         // checksum includes the version
         var private_key = private_wif.slice(0, -4);
         var checksum = private_wif.slice(-4);

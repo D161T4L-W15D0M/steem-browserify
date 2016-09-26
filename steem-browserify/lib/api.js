@@ -1019,11 +1019,15 @@ Steem.txSend = function (tx, privKeys, callback) {
             tx.expiration = expiration.toISOString().replace('Z', '');
             tx.ref_block_num = result.head_block_number & 0xFFFF;
             tx.ref_block_prefix = new Buffer(result.head_block_id, 'hex').readUInt32LE(4);
-            var signedTransaction = steemAuth.signTransaction(tx, privKeys);
-            //console.log(JSON.stringify(signedTransaction));
-            self.broadcastTransactionWithCallback(function () { }, signedTransaction, function (err, result) {
-                callback(err, result);
-            });
+            try {
+                var signedTransaction = steemAuth.signTransaction(tx, privKeys);
+                //console.log(JSON.stringify(signedTransaction));
+                self.broadcastTransactionWithCallback(function () { }, signedTransaction, function (err, result) {
+                    callback(err, result);
+                });
+            } catch (e) {
+                callback(e.toString(), "");
+            }
         });
     });
 };

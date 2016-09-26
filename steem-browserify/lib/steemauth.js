@@ -98,9 +98,13 @@ Auth.signTransaction = function (trx, keys) {
     var cid = new Buffer('0000000000000000000000000000000000000000000000000000000000000000', 'hex');
 	var buf = transaction.toBuffer(trx);
 
-	for (var key in keys) {
-		var sig = Signature.signBuffer(Buffer.concat([cid, buf]), keys[key]);
-		signatures.push(sig.toBuffer())
+    for (var key in keys) {
+        try {
+            var sig = Signature.signBuffer(Buffer.concat([cid, buf]), keys[key]);
+            signatures.push(sig.toBuffer());
+        } catch (e) {
+            throw new Error(e.toString().substring(7));
+        }
 	}
 
 	return signed_transaction.toObject(Object.assign(trx, { signatures: signatures }))
