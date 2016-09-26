@@ -1024,11 +1024,15 @@ Steem.txSend = function (tx, privKeys, callback) {
             tx.expiration = expiration.toISOString().replace('Z', '');
             tx.ref_block_num = result.head_block_number & 0xFFFF;
             tx.ref_block_prefix = new Buffer(result.head_block_id, 'hex').readUInt32LE(4);
-            var signedTransaction = steemAuth.signTransaction(tx, privKeys);
-            //console.log(JSON.stringify(signedTransaction));
-            self.broadcastTransactionWithCallback(function () { }, signedTransaction, function (err, result) {
-                callback(err, result);
-            });
+            try {
+                var signedTransaction = steemAuth.signTransaction(tx, privKeys);
+                //console.log(JSON.stringify(signedTransaction));
+                self.broadcastTransactionWithCallback(function () { }, signedTransaction, function (err, result) {
+                    callback(err, result);
+                });
+            } catch (e) {
+                callback(e.toString(), "");
+            }
         });
     });
 };
@@ -2342,7 +2346,11 @@ var Signature = function () {
     */
     Signature.signBuffer = function signBuffer(buf, private_key) {
         var _hash = hash.sha256(buf);
-        return Signature.signBufferSha256(_hash, private_key);
+        try {
+            return Signature.signBufferSha256(_hash, private_key);
+        } catch (e) {
+            throw new Error(e.toString().substring(7));
+        }
     };
 
     /** Sign a buffer of exactally 32 bytes in size (sha256(text))
@@ -2354,8 +2362,12 @@ var Signature = function () {
 
     Signature.signBufferSha256 = function signBufferSha256(buf_sha256, private_key) {
         if (buf_sha256.length !== 32 || !Buffer.isBuffer(buf_sha256)) throw new Error("buf_sha256: 32 byte buffer requred");
-        private_key = toPrivateObj(private_key);
-        assert(private_key, 'private_key required');
+        try {
+            private_key = toPrivateObj(private_key);
+        } catch (e) {
+            throw new Error("Bad or missing key");
+        }
+        // assert(private_key, 'private_key required');
 
         var der, e, ecsignature, i, lenR, lenS, nonce;
         i = null;
@@ -2376,7 +2388,11 @@ var Signature = function () {
                 console.log("WARN: " + nonce + " attempts to find canonical signature");
             }
         }
-        return new Signature(ecsignature.r, ecsignature.s, i);
+        try {
+            return new Signature(ecsignature.r, ecsignature.s, i);
+        } catch (e) {
+            throw new Error(e.toString().substring(7));
+        }
     };
 
     Signature.sign = function sign(string, private_key) {
@@ -2433,7 +2449,11 @@ var Signature = function () {
 }();
 
 var toPrivateObj = function toPrivateObj(o) {
-    return o ? o.d ? o : PrivateKey.fromWif(o) : o /*null or undefined*/;
+    try {
+        return o ? o.d ? o : PrivateKey.fromWif(o) : o /*null or undefined*/;
+    } catch (e) {
+        throw new Error(e.toString().substring(7));
+    }
 };
 module.exports = Signature;
 }).call(this,require("buffer").Buffer)
@@ -4073,7 +4093,9 @@ var PrivateKey = function () {
     PrivateKey.fromWif = function fromWif(_private_wif) {
         var private_wif = new Buffer(base58.decode(_private_wif));
         var version = private_wif.readUInt8(0);
-        assert.equal(0x80, version, "Expected version " + 0x80 + ", instead got " + version);
+        if (0x80 != version)
+            throw new Error("Expected version " + 0x80 + ", instead got " + version);
+        // assert.equal(0x80, version, "Expected version " + 0x80 + ", instead got " + version);
         // checksum includes the version
         var private_key = private_wif.slice(0, -4);
         var checksum = private_wif.slice(-4);
@@ -4466,9 +4488,13 @@ Auth.signTransaction = function (trx, keys) {
     var cid = new Buffer('0000000000000000000000000000000000000000000000000000000000000000', 'hex');
 	var buf = transaction.toBuffer(trx);
 
-	for (var key in keys) {
-		var sig = Signature.signBuffer(Buffer.concat([cid, buf]), keys[key]);
-		signatures.push(sig.toBuffer())
+    for (var key in keys) {
+        try {
+            var sig = Signature.signBuffer(Buffer.concat([cid, buf]), keys[key]);
+            signatures.push(sig.toBuffer());
+        } catch (e) {
+            throw new Error(e.toString().substring(7));
+        }
 	}
 
 	return signed_transaction.toObject(Object.assign(trx, { signatures: signatures }))
@@ -30387,8 +30413,31 @@ module.exports = function(arr, obj){
   return -1;
 };
 },{}],146:[function(require,module,exports){
-arguments[4][111][0].apply(exports,arguments)
-},{"dup":111}],147:[function(require,module,exports){
+if (typeof Object.create === 'function') {
+  // implementation from standard node.js 'util' module
+  module.exports = function inherits(ctor, superCtor) {
+    ctor.super_ = superCtor
+    ctor.prototype = Object.create(superCtor.prototype, {
+      constructor: {
+        value: ctor,
+        enumerable: false,
+        writable: true,
+        configurable: true
+      }
+    });
+  };
+} else {
+  // old school shim for old browsers
+  module.exports = function inherits(ctor, superCtor) {
+    ctor.super_ = superCtor
+    var TempCtor = function () {}
+    TempCtor.prototype = superCtor.prototype
+    ctor.prototype = new TempCtor()
+    ctor.prototype.constructor = ctor
+  }
+}
+
+},{}],147:[function(require,module,exports){
 /*!
  * Determine if an object is a Buffer
  *
@@ -32921,8 +32970,8 @@ function config (name) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],165:[function(require,module,exports){
-arguments[4][111][0].apply(exports,arguments)
-},{"dup":111}],166:[function(require,module,exports){
+arguments[4][146][0].apply(exports,arguments)
+},{"dup":146}],166:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
